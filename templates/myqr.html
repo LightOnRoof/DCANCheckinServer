@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Reader</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+    }
+    .container {
+            flex: 1;
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+    .dropdown {
+        border: 1px solid #ccc;
+        max-height: 200px;
+        overflow-y: auto;
+        width: 100%;
+        background-color: white;
+        position: absolute;
+        z-index: 1000;
+    }
+    .dropdown-option {
+        padding: 8px;
+        cursor: pointer;
+    }
+    .dropdown-option:hover {
+        background-color: #f0f0f0;
+    }
+    .hidden {
+        display: none;
+    }
+    .container{
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    </style>
+</head>
+<body>
+    <div class = "main-layout">
+        <div class="container">
+
+            <div class="controls">
+                <label for="search-bar">Search for a name:</label>
+                <input type="text" id="search-bar" placeholder="Type to search...">
+                <div id="custom-dropdown" class="dropdown hidden"></div>
+                <button id="select-btn" onclick="handleNameSelection()">Select</button>
+            </div>              
+            <img src = "" width="800" height="800" id = "qr">
+            
+        </div>
+    </div>
+
+
+
+    <script>let dropdownData = [];  // Store name-uuid pairs
+        let selectedUuid = '';
+        let selectedName = '';
+        
+        function populateDropdown(names, uuids) {
+            dropdownData = names.map((name, i) => ({ name, uuid: uuids[i] }));
+        }
+        
+        function filterDropdown() {
+            const input = document.getElementById('search-bar').value.toLowerCase();
+            const dropdown = document.getElementById('custom-dropdown');
+            dropdown.innerHTML = '';
+        
+            const filtered = dropdownData.filter(item => item.name.toLowerCase().includes(input));
+            if (filtered.length === 0 || input.trim() === '') {
+                dropdown.classList.add('hidden');
+                return;
+            }
+        
+            filtered.forEach(item => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'dropdown-option';
+                optionDiv.textContent = item.name;
+                optionDiv.onclick = () => {
+                    selectedName = item.name;
+                    selectedUuid = item.uuid;
+                    document.getElementById('search-bar').value = item.name;
+                    dropdown.classList.add('hidden');
+                };
+                dropdown.appendChild(optionDiv);
+            });
+        
+            dropdown.classList.remove('hidden');
+        }
+        
+        function handleNameSelection() {
+            if (selectedUuid) {
+                getQR(selectedUuid);
+            }
+        }
+        
+        document.getElementById('search-bar').addEventListener('input', filterDropdown);
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('custom-dropdown').contains(e.target) &&
+                e.target.id !== 'search-bar') {
+                document.getElementById('custom-dropdown').classList.add('hidden');
+            }
+        });
+        
+        function getQR(uuid){
+            const img = document.getElementById("qr");
+            fetch("/get-qr", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: uuid })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    img.src = 'data:image/png;base64, ' + result.message;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+        
+        // Fetch names
+        fetch("/get-names")
+            .then(response => response.json())
+            .then(data => {
+                const people = data["names"];
+                const names = people.map(p => p[0]);
+                const uuids = people.map(p => p[1]);
+                populateDropdown(names, uuids);
+            });
+        
+        
+    </script>
+</body>
+</html>

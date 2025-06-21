@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Reader</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .main-layout {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 20px;
+        }
+
+        .container {
+            flex: 1;
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar {
+            width: 350px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h2 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 24px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .instruction-step {
+            display: flex;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            background-color: #007bff;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+
+        .step-content h3 {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .step-content p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .tips-section, .record {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .tips-section {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .record {
+            background-color: #51b75f;
+            border-left: 4px solid #35dc8e;
+        }
+
+        .tips-section h3, .troubleshooting h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .tips-section ul, .troubleshooting ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .tips-section li, .troubleshooting li {
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                position: static;
+                order: -1;
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 5px
+            ;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #qr-reader {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+            top: -40px;
+            position: relative;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+
+        .qr-result {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            word-wrap: break-word;
+            font-family: monospace;
+        }
+
+        .status {
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .dropdown {
+            border: 1px solid hsl(0, 0%, 80%);
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+            background-color: white;
+            position: absolute;
+            z-index: 1000;
+        }
+        .dropdown-option {
+            padding: 8px;
+            width:200px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .dropdown-option:hover {
+            background-color: #f0f0f0;
+        }
+        #custom-dropdown {
+            position: absolute;
+            left: calc(40% - 200px);
+            max-width: fit-content;
+            max-height: 100px;
+            overflow: scroll;
+        }
+    </style>
+</head>
+<body>
+    <div class = "main-layout">
+        <div class="container">
+            <h1>Login QR Scanner</h1>
+            <h2><a href="myqr.html">What's My QR?</a></h2>
+            <div class="controls">
+                <button id="start-btn" onclick="startScanner()">Loading...</button>
+            </div>
+            
+            <div id="qr-reader"></div>
+            
+            <div class="result-section">
+                <h3>Scanned Data:</h3>
+                <div id="qr-result" class="qr-result">No QR code scanned yet...</div>
+                <div id="person-info" class="qr-result" style="display: none; background-color: #d4edda; color: #155724;">
+                    <h2>
+                    <strong>Name:</strong> <span id="full-name"></span>
+                    <strong>Is this you?</strong>
+                    <button id="confirm-btn" onclick="confirmSFX.play();requestLogin()">Yes</button>
+                    <button id="deny-btn" onclick="reset()">No</button>
+                    </h2>
+                </div>
+            </div>
+            <!---names dropdown-->
+            <div class="container">
+
+                <div class="controls">
+                    <label for="search-bar">Search for a name:</label>
+                    <input type="text" id="search-bar" placeholder="Type to search...">
+                    <div id="custom-dropdown" class="dropdown hidden"></div>
+                    <button id="select-btn" onclick="handleNameSelection()">Select</button>
+                </div>              
+                
+            </div>
+            <script>
+                let dropdownData = [];  // Store name-uuid pairs
+                let selectedUuid = '';
+                let selectedName = '';
+                
+                function populateDropdown(names, uuids) {
+                    dropdownData = names.map((name, i) => ({ name, uuid: uuids[i] }));
+                }
+                
+                function filterDropdown() {
+                    const input = document.getElementById('search-bar').value.toLowerCase();
+                    const dropdown = document.getElementById('custom-dropdown');
+                    dropdown.innerHTML = '';
+                
+                    const filtered = dropdownData.filter(item => item.name.toLowerCase().includes(input));
+                    if (filtered.length === 0 || input.trim() === '') {
+                        dropdown.classList.add('hidden');
+                        return;
+                    }
+                
+                    filtered.forEach(item => {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'dropdown-option';
+                        optionDiv.textContent = item.name;
+                        optionDiv.onclick = () => {
+                            selectedName = item.name;
+                            selectedUuid = item.uuid;
+                            document.getElementById('search-bar').value = item.name;
+                            dropdown.classList.add('hidden');
+                            handleNameSelection();
+                        };
+                        dropdown.appendChild(optionDiv);
+                    });
+                
+                    dropdown.classList.remove('hidden');
+                }
+                
+                
+                document.getElementById('search-bar').addEventListener('input', filterDropdown);
+                document.addEventListener('click', (e) => {
+                    if (!document.getElementById('custom-dropdown').contains(e.target) &&
+                        e.target.id !== 'search-bar') {
+                        document.getElementById('custom-dropdown').classList.add('hidden');
+                    }
+                });
+                
+                
+                // Fetch names
+                fetch("/get-names")
+                    .then(response => response.json())
+                    .then(data => {
+                        const people = data["names"];
+                        const names = people.map(p => p[0]);
+                        const uuids = people.map(p => p[1]);
+                        populateDropdown(names, uuids);
+                    });
+                
+                
+            </script>
+            
+            <div id="status"></div>
+        </div>
+        <div class="sidebar">
+            <h2>How to Use</h2>
+            <div class="instruction-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Start Camera</h3>
+                    <p>Click the "Start Camera" button to activate your device's camera. You may need to grant camera permissions.</p>
+                </div>
+            </div>
+            
+            <div class="instruction-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Position QR Code</h3>
+                    <p>Hold your QR code in front of the camera. Make sure it's well-lit and clearly visible within the scanning area.</p>
+                </div>
+            </div>
+            
+            <div class="instruction-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Automatic Sign-In</h3>
+                    <p>Once scanned, the system will automatically process your QR code and sign you in. No additional steps needed!</p>
+                </div>
+            </div>
+            
+            <div class="tips-section">
+                <h3>💡 Tips</h3>
+                <ul>
+                    <li>Ensure good lighting for better scanning</li>
+                    <li>Hold the QR code steady</li>
+                    <li>Keep the code within the scanning box</li>
+                    <li>Make sure the QR code is not damaged</li>
+                </ul>
+            </div>
+            <div class ="record">
+                <h3> Today's record:</h3>
+                <ul id = "previous-logins-today", style = "max-height: 200px; overflow-y: auto;">
+                    <!-- Previous logins will be populated here -->
+                </ul>
+            </div>
+            <script>
+                fetch("/get-today-logins")
+                    .then(response => response.json())
+                    .then(data => {
+                        const logins = data.logins;
+                        const loginsList = document.getElementById('previous-logins-today');
+                        if (logins.length === 0) {
+                            loginsList.innerHTML = '<li>No logins today.</li>';
+                        } else {
+                            logins.forEach(login => {
+                                const li = document.createElement('li');
+                                li.textContent = login;
+                                loginsList.appendChild(li);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching logins:', error);
+                    });
+            </script>
+        </div>
+    </div>
+
+
+
+    <script>
+        const confirmSFX = new Audio("{{ url_for('static', filename='sfx/confirm.mp3') }}");
+        let html5QrcodeScanner = null;
+        let lastScannedData = null;
+        let lastSentData = null;
+        let requestedLogin = false;
+        function reset() {
+            document.getElementById('qr-result').textContent = 'No QR code scanned yet...';
+            document.getElementById('person-info').style.display = 'none';
+            document.getElementById('full-name').textContent = '';
+            lastScannedData = null;
+            lastSentData = null;
+            showStatus('QR code reset. Scan again.', 'success');
+        }
+        function requestLogin() {
+            if(!requestedLogin){
+                fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ data: lastSentData })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        showStatus('Login successful!', 'success');
+                        confirmSFX.play();
+                        setTimeout(function(){console.log("HELPP");window.location.reload()},'1000');
+                    } else {
+                        showStatus('Error sending data to server.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showStatus('Error sending data to server.', 'error');
+                });
+                requestedLogin=true;
+            }
+        }
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log(`QR Code detected: ${decodedText}`);
+            
+            // Update the result display
+            document.getElementById('qr-result').textContent = decodedText;
+            lastScannedData = decodedText;
+            
+            // Show success status
+            
+            // Automatically send to server
+            if(lastScannedData !== lastSentData) {
+                showStatus('QR Code scanned! Sending to server...', 'success');
+                sendToServer();
+            }
+        }
+        
+        function onScanFailure(error) {
+            // This is called when no QR code is found - we can ignore these
+            // console.log(`QR Code scan error: ${error}`);
+        }
+        
+        function startScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+                return;
+            }
+            
+            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+            
+            const config = {
+                fps: 20,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+            
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, // Use back camera
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).then(() => {
+                document.getElementById('start-btn').hidden = true;
+            //    document.getElementById('stop-btn').disabled = false;
+                showStatus('Camera started. Point at a QR code to scan.', 'success');
+            }).catch(err => {
+                console.error('Error starting scanner:', err);
+                showStatus('Error starting camera. Please check permissions. Retrying in 1s', 'error');
+                setTimeout(() => {
+                    startScanner();
+                }, 1000);
+            });
+        }
+        function sendToServer() {
+            lastSentData = lastScannedData;
+            if (!lastScannedData) {
+                showStatus('No QR code data to send!', 'error');
+                return;
+            }
+            
+            fetch('/qr-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ data: lastScannedData })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showStatus('Data sent to server successfully!', 'success');
+                    showName(result.name);
+                    requestLogin();
+                } else {
+                    showStatus('Error sending data to server.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showStatus('Error sending data to server.', 'error');
+            });
+        }
+        function showName(name) {
+            const nameDiv = document.getElementById('full-name');
+            nameDiv.textContent = name;
+            document.getElementById('person-info').style.display = 'block';
+            document.getElementById("search-bar").value = '';
+            filterDropdown();
+        }
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            
+            // Clear status after 3 seconds
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = '';
+            }, 3000);
+        }
+        
+        // Stop scanner when page is closed
+        window.addEventListener('beforeunload', () => {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop();
+            }
+        });
+        setTimeout(() => {
+                startScanner();
+            }, 50);
+        
+        function handleNameSelection() {
+            lastSentData = selectedUuid; // Use UUID as scanned data
+            if (selectedName) {
+                showName(selectedName);
+            }
+        }
+    </script>
+</body>
+</html>
